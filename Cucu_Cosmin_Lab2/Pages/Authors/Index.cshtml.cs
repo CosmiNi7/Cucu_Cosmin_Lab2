@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Cucu_Cosmin_Lab2.Data;
 using Cucu_Cosmin_Lab2.Models;
 
-namespace Cucu_Cosmin_Lab2.Pages.Books
+namespace Cucu_Cosmin_Lab2.Pages.Authors
 {
     public class IndexModel : PageModel
     {
@@ -19,14 +19,11 @@ namespace Cucu_Cosmin_Lab2.Pages.Books
             _context = context;
         }
 
-        public IList<Book> Book { get;set; }
+        public IList<Author> Author { get;set; }
 
         public async Task OnGetAsync()
         {
-            Book = await _context.Book
-                .Include(b => b.Publisher)
-                 .Include(b => b.Author)
-                .ToListAsync();
+            Author = await _context.Author.ToListAsync();
         }
     }
 }
