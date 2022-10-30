@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
@@ -8,8 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using Cucu_Cosmin_Lab2.Data;
 
 namespace Cucu_Cosmin_Lab2
 {
@@ -26,9 +24,6 @@ namespace Cucu_Cosmin_Lab2
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddRazorPages();
-
-            services.AddDbContext<Cucu_Cosmin_Lab2Context>(options =>
-                    options.UseSqlServer(Configuration.GetConnectionString("Cucu_Cosmin_Lab2Context")));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
