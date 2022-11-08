@@ -32,10 +32,10 @@ namespace Cucu_Cosmin_Lab2.Pages.Books
             }
 
             Book = await _context.Book
-            .Include(b => b.Publisher)
-            .Include(b => b.BookCategories).ThenInclude(b => b.Category)
-            .AsNoTracking()
- .          FirstOrDefaultAsync(m => m.ID == id);
+             .Include(b => b.Publisher)
+             .Include(b => b.BookCategories).ThenInclude(b => b.Category)
+             .AsNoTracking()
+             .FirstOrDefaultAsync(m => m.ID == id);
 
             if (Book == null)
             {
@@ -83,40 +83,7 @@ selectedCategories)
             return Page();
         }
 
-        private void UpdateBookCategories(Cucu_Cosmin_Lab2Context context, string[] selectedCategories, Book bookToUpdate)
-        {
-            throw new NotImplementedException();
-        }
+
     }
-            if !private ModelState isValid;
-                return Page
-            }
 
-Context.Attach(Book).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BookExists(Book.ID))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return RedirectToPageResult("./Index")
-object RedirectToPageResult(string v)
-{
-    throw new NotImplementedException();
 }
-bool BookExists(int id)
-        {
-            return _context.Book.Any(e => e.ID == id);
-        }
-

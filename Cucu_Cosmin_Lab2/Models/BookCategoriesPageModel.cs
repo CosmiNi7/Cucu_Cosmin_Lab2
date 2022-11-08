@@ -8,7 +8,7 @@ namespace Cucu_Cosmin_Lab2.Models
     public class BookCategoriesPageModel: PageModel
  {
  public List<AssignedCategoryData> AssignedCategoryDataList;
-    public void PopulateAssignedCategoryData(Cucu_Cosmin_Lab2Context context,
+    public void PopulateAssignedCategoryData(Cucu_Cosmin_Lab2.Data.Cucu_Cosmin_Lab2Context context,
     Book book)
     {
         var allCategories = context.Category;
@@ -25,8 +25,7 @@ namespace Cucu_Cosmin_Lab2.Models
             });
         }
     }
-        public void UpdateBookCategories(Cucu_Cosmin_Lab2 context
-    string[] selectedCategories, Book bookToUpdate)
+        public void UpdateBookCategories(Cucu_Cosmin_Lab2.Data.Cucu_Cosmin_Lab2Context context,     string[] selectedCategories, Book bookToUpdate)
     {
         if (selectedCategories == null)
         {
