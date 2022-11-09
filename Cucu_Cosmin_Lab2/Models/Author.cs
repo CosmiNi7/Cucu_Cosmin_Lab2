@@ -14,8 +14,15 @@ namespace Cucu_Cosmin_Lab2.Models
         [Display(Name = "Author Name")]
         public string FirstName { get; set; }
         public string LastName { get; set; }
-        public string FullName { get { return FirstName + " " + LastName; } }
 
+        [Display(Name = "Full Name")]
+        public string FullName
+        {
+            get
+            {
+                return FirstName + " " + LastName;
+            }
+        }
         public ICollection<Book>? Books { get; set; }
     }
 }
