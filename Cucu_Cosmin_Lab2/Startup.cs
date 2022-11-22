@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Cucu_Cosmin_Lab2.Data;
+using Microsoft.AspNetCore.Identity;
 
 namespace Cucu_Cosmin_Lab2
 {
@@ -25,10 +26,28 @@ namespace Cucu_Cosmin_Lab2
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddRazorPages();
+            services.AddAuthorization(option =>
+            {
+                option.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+            });
+
+            services.AddRazorPages(options =>
+            {
+                options.Conventions.AuthorizeFolder("/Books");
+                options.Conventions.AllowAnonymousToPage("/Books/Index");
+                options.Conventions.AllowAnonymousToPage("/Books/Details");
+                //options.Conventions.AuthorizeFolder("Members", "AdminPolicy");
+            });
 
             services.AddDbContext<Cucu_Cosmin_Lab2Context>(options =>
                     options.UseSqlServer(Configuration.GetConnectionString("Cucu_Cosmin_Lab2Context")));
+
+            services.AddDbContext<LibraryIdentityContext>(options =>
+                    options.UseSqlServer(Configuration.GetConnectionString("Cucu_Cosmin_Lab2Context")));
+
+            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<LibraryIdentityContext>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
