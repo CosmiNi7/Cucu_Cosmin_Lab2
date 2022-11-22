@@ -4,10 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Text.Encodings.Web;
+using System.Threading;
 using System.Threading.Tasks;
+using Cucu_Cosmin_Lab2.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -23,18 +26,25 @@ namespace Cucu_Cosmin_Lab2.Areas.Identity.Pages.Account
         private readonly UserManager<IdentityUser> _userManager;
         private readonly ILogger<RegisterModel> _logger;
         private readonly IEmailSender _emailSender;
+        private readonly IUserEmailStore<IdentityUser> _emailStore;
+        private readonly Cucu_Cosmin_Lab2.Data.Cucu_Cosmin_Lab2Context _context;
+        private IUserEmailStore<IdentityUser> _userStore;
 
         public RegisterModel(
             UserManager<IdentityUser> userManager,
             SignInManager<IdentityUser> signInManager,
             ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            IEmailSender emailSender,
+            Cucu_Cosmin_Lab2.Data.Cucu_Cosmin_Lab2Context context)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _logger = logger;
             _emailSender = emailSender;
+            _context = context;
         }
+        [BindProperty]
+        public Member Member { get; set; }
 
         [BindProperty]
         public InputModel Input { get; set; }
@@ -66,49 +76,90 @@ namespace Cucu_Cosmin_Lab2.Areas.Identity.Pages.Account
         {
             ReturnUrl = returnUrl;
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
         }
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl = returnUrl ?? Url.Content("~/");
+            returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-            if (ModelState.IsValid)
+
+            var user = CreateUser();
+
+            await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+            await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+            var result = await _userManager.CreateAsync(user, Input.Password);
+            Member.Email = Input.Email;
+            _context.Member.Add(Member);
+            await _context.SaveChangesAsync();
+            if (result.Succeeded)
             {
-                var user = new IdentityUser { UserName = Input.Email, Email = Input.Email };
-                var result = await _userManager.CreateAsync(user, Input.Password);
-                if (result.Succeeded)
+                _logger.LogInformation("User created a new account with password.");
+
+                var userId = await _userManager.GetUserIdAsync(user);
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                code =
+               WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+                var callbackUrl = Url.Page(
+                "/Account/ConfirmEmail",
+               pageHandler: null,
+               values: new
+               {
+                   area = "Identity",
+                   userId = userId,
+                   code = code,
+                   returnUrl = returnUrl
+               },
+                protocol: Request.Scheme);
+                await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
+
+                $"Please confirm your account by <ahref = '{HtmlEncoder.Default.Encode(callbackUrl)}' > clicking here </ a >.");
+
+
+                if
+               (_userManager.Options.SignIn.RequireConfirmedAccount)
                 {
-                    _logger.LogInformation("User created a new account with password.");
-
-                    var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-                    var callbackUrl = Url.Page(
-                        "/Account/ConfirmEmail",
-                        pageHandler: null,
-                        values: new { area = "Identity", userId = user.Id, code = code, returnUrl = returnUrl },
-                        protocol: Request.Scheme);
-
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
-
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    return RedirectToPage("RegisterConfirmation", new
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                    }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
+                        email = Input.Email,
+                        returnUrl = returnUrl
+                    });
+                }
+                else
+                {
+                    await _signInManager.SignInAsync(user,
+                   isPersistent: false);
+                    return LocalRedirect(returnUrl);
                 }
                 foreach (var error in result.Errors)
                 {
-                    ModelState.AddModelError(string.Empty, error.Description);
+                    ModelState.AddModelError(string.Empty,
+                   error.Description);
                 }
             }
-
-            // If we got this far, something failed, redisplay form
             return Page();
+        }
+        private IdentityUser CreateUser()
+        {
+            try
+            {
+                return Activator.CreateInstance<IdentityUser>();
+            }
+            catch
+            {
+                throw new InvalidOperationException($"Can't create an instance of '{nameof(IdentityUser)}'. " +
+                    $"Ensure that '{nameof(IdentityUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
+                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+            }
+        }
+
+        private IUserEmailStore<IdentityUser> GetEmailStore()
+        {
+            if (!_userManager.SupportsUserEmail)
+            {
+                throw new NotSupportedException("The default UI requires a user store with email support.");
+            }
+            return (IUserEmailStore<IdentityUser>)_userStore;
         }
     }
 }
